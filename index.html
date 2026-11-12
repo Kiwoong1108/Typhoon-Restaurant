@@ -129,7 +129,7 @@ button:focus-visible{outline:3px solid var(--bolt);outline-offset:2px}
 <script>
 (()=>{
 'use strict';
-const W=360,H=640,END=25,ROAD=290,N=220,HOR=212,F=300,CH=1.5,ZN=1.1,RW=4.2,SW=7.5,XW=3.1,WX=180,WY=566;
+const W=360,H=640,END=25,ROAD=290,N=1000,HOR=212,F=300,CH=1.5,ZN=1.1,RW=4.2,SW=7.5,XW=3.1,WX=180,WY=566;
 const FD='"Do Hyeon","Noto Sans KR",sans-serif',FB='"Noto Sans KR",sans-serif';
 const $=id=>document.getElementById(id);
 const stage=$('stage'),cv=$('cv'),ctx=cv.getContext('2d');
@@ -158,7 +158,8 @@ const TOSS_NEED=10,GOLD_T=8;
 // rice: white → golden at 10 tosses, then blackens as wok contact nears 15s; 파 and 새우 keep their colour until they burn
 function noodleColN(n){const k=Math.min(1,n.h/GOLD_T),b=clamp((n.h-13)/(BURN_T-13),0,1);
   const A=n.kind===1?[108,200,95]:n.kind===2?[255,138,92]:[247,243,232],B=n.kind===0?[226,166,72]:A,C=[28,20,8];
-  return'rgb('+A.map((v,i)=>v+(B[i]-v)*k).map((v,i)=>Math.round(v+(C[i]-v)*b)).join(',')+')'}
+  const f=n.kind===0?.78+((n.ph*13.7)%1)*.22:1; // per-grain shade so 1000 grains read as grains, not paste
+  return'rgb('+A.map((v,i)=>v+(B[i]-v)*k).map((v,i)=>Math.round((v+(C[i]-v)*b)*f)).join(',')+')'}
 const grainGood='#e2a648',grainRaw='#f4efe2';
 function noodleColH(h){if(h<RAW_T)return lerpCol('#f0d27c','#c99a52',h/RAW_T);if(h<12)return lerpCol('#c99a52','#6b3f1c',(h-RAW_T)/(12-RAW_T));if(h<BURN_T)return lerpCol('#6b3f1c','#2a1a0e',(h-12)/(BURN_T-12));return'#141414'}
 
@@ -192,7 +193,7 @@ function outlined(txt,x,y,size,col){ctx.font=size+'px '+FD;ctx.textAlign='center
 function drawDrop(k,x,y,rot,s){
   ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.scale(s,s);
   if(k===0){rr(ctx,-24,-13,48,26,3);ctx.fillStyle='#ffd23f';ctx.fill();ctx.strokeStyle='#1b1712';ctx.lineWidth=2;ctx.stroke();
-    ctx.fillStyle='#e63b2e';ctx.font='15px '+FD;ctx.textAlign='center';ctx.fillText('치킨',0,5)}
+    ctx.fillStyle='#e63b2e';ctx.font='15px '+FD;ctx.textAlign='center';ctx.fillText('간판',0,5)}
   else if(k===1){ctx.fillStyle='#b5562e';ctx.beginPath();ctx.moveTo(-14,-4);ctx.lineTo(14,-4);ctx.lineTo(10,16);ctx.lineTo(-10,16);ctx.closePath();ctx.fill();
     ctx.fillStyle='#3f9a4a';for(let i=0;i<5;i++){ctx.beginPath();ctx.ellipse(-10+i*5,-10,4,10,(i-2)*.35,0,7);ctx.fill()}}
   else if(k===2){ctx.fillStyle='#d8352a';ctx.beginPath();ctx.moveTo(-24,-12);ctx.lineTo(24,-12);ctx.lineTo(18,12);ctx.lineTo(-18,12);ctx.closePath();ctx.fill();ctx.fillStyle='#a8241c';ctx.fillRect(-25,-14,50,5)}
@@ -266,7 +267,7 @@ function drawShrimp(c,col){c.strokeStyle=col;c.lineWidth=7;c.lineCap='round';c.b
   c.strokeStyle='rgba(255,255,255,.55)';c.lineWidth=1.3;for(let i=0;i<4;i++){const a=.6+i*.75;c.beginPath();c.moveTo(Math.cos(a)*5.5,Math.sin(a)*5.5);c.lineTo(Math.cos(a)*12.5,Math.sin(a)*12.5);c.stroke()}
   c.fillStyle=col;c.beginPath();c.moveTo(-1,-9);c.lineTo(5,-16);c.lineTo(7,-8);c.closePath();c.fill();c.fillStyle='#1b1712';c.beginPath();c.arc(9,3,1.3,0,7);c.fill()}
 function drawBit(kind,x,y,rot,sc,col,sw){ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.scale(sc,sc);
-  if(kind===0){const g=1+(sw||0);ctx.fillStyle=col;ctx.beginPath();ctx.ellipse(0,0,4.4*g,2.4*g,0,0,7);ctx.fill();ctx.strokeStyle='rgba(0,0,0,.22)';ctx.lineWidth=.7;ctx.stroke()}
+  if(kind===0){const g=1+(sw||0);ctx.fillStyle=col;ctx.beginPath();ctx.ellipse(0,0,3.3*g,1.8*g,0,0,7);ctx.fill()}
   else if(kind===1){ctx.strokeStyle=col;ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(0,0,2.7,0,7);ctx.stroke()}
   else drawShrimp(ctx,col);
   ctx.restore()}
@@ -370,7 +371,7 @@ function update(dt){
   // heat: only noodles lying in the wok cook; airborne ones pause
   let burntNow=0;
   for(const n of G.nd){if(n.st!==0)continue;const before=n.h;n.h+=dt;if(before<BURN_T&&n.h>=BURN_T)burntNow++;
-    if(n.h>11&&n.kind===0&&Math.random()<dt*(n.h>=BURN_T?.22:.09))G.parts.push({x:WX+n.ox,y:WY+n.oy,vx:(Math.random()-.5)*20,vy:-50-Math.random()*40,col:'rgba(160,160,160,.55)',life:1,s:6+Math.random()*6,g:-20})}
+    if(n.h>11&&n.kind===0&&Math.random()<dt*(n.h>=BURN_T?.05:.02))G.parts.push({x:WX+n.ox,y:WY+n.oy,vx:(Math.random()-.5)*20,vy:-50-Math.random()*40,col:'rgba(160,160,160,.55)',life:1,s:6+Math.random()*6,g:-20})}
   if(burntNow&&G.t-(G.lastBurnMsg||-9)>.9){G.lastBurnMsg=G.t;G.floats.push({x:180,y:470,txt:'밥 탄다! 띄워!',col:'#ff8a7a',life:1,size:22});sfx(120,.2,'sawtooth',.04,.7)}
   if(!G.warned&&G.nd.some(n=>n.st===0&&n.h>11.5)){G.warned=true;G.floats.push({x:180,y:470,txt:'타는 냄새... 웍질!',col:'#ffb36b',life:1.2,size:20})}
   const v=G.stun>0?6:G.slow>0?5.5:12+Math.min(t,10)*.45;
@@ -435,13 +436,13 @@ function zap(){G.zapped=true;G.zapT=0;G.hitstop=.25;G.flash=.9;G.shake=14;
   for(let i=0;i<30;i++)G.parts.push({x:180,y:WY,vx:(Math.random()-.5)*400,vy:-100-Math.random()*300,col:i%2?'#ffd23f':'#fffbe0',life:1.2,s:4,g:300});end(1)}
 function arrive(){G.time=G.t;sfx(660,.12,'triangle',.07);setTimeout(()=>sfx(523,.25,'triangle',.07),130);
   const k=kept(G),q=quality(G),sh=shrimpKept(G);
-  const pre=Math.round(200+q.good*4+q.raw*1+sh*40+Math.max(0,END-G.t)*20);
+  const pre=Math.round(200+q.good*.9+q.raw*.2+sh*40+Math.max(0,END-G.t)*20);
   G.floats.push({x:180,y:290,txt:'딩동~ 태풍반점입니다!',col:'#ffd23f',life:1.9,size:26});
   let say;
   if(pre<650||sh===0)say='...새우볶음밥 시켰는데요?';
   else if(q.burnt>q.good&&q.burnt>=q.raw)say='...이거 누룽지예요?';
   else if(q.raw>q.good)say='밥이 하얀데요? 볶은 거 맞아요?';
-  else if(k>=180)say='와 노릇노릇하네요!';
+  else if(k>=800)say='와 노릇노릇하네요!';
   else say='...좀 흘리셨네요?';
   G.custSay=say;
   G.floats.push({x:180,y:300,txt:'"'+say+'"',col:'#f6f1e7',life:2.6,size:22,keep:true});
@@ -450,7 +451,7 @@ function end(reason){
   if(mode!=='play')return;
   G.reason=reason;if(reason!==0)G.time=Math.min(G.t,END);
   const q=quality(G);G.good=q.good;G.raw=q.raw;G.burnt=q.burnt;G.kept=q.good+q.raw+q.burnt;G.dan=reason===0?shrimpKept(G):0;
-  G.score=reason===0?Math.round(200+q.good*4+q.raw*1+G.dan*40+Math.max(0,END-G.time)*20):0;
+  G.score=reason===0?Math.round(200+q.good*.9+q.raw*.2+G.dan*40+Math.max(0,END-G.time)*20):0;
   G.path.push(enc2(G.px,G.dist,G.kept));mode='over';G.overT=0;
   if(reason===2){G.swell=0;G.floats.push({x:180,y:300,txt:'볶음밥이 식어서 떡졌다',col:'#ff8a7a',life:1.8,size:26});sfx(220,.5,'triangle',.06,.5)}
 }
@@ -484,7 +485,7 @@ function drawBowl(x,cx,cy,rec){
   x.fillStyle='#ffffff';x.beginPath();x.arc(cx,cy,150,0,7);x.fill();
   x.strokeStyle='#2f5fb3';x.lineWidth=6;x.beginPath();x.arc(cx,cy,140,0,7);x.stroke();
   x.lineWidth=3;for(let i=0;i<24;i++){const a=i/24*6.28;x.beginPath();x.arc(cx+Math.cos(a)*140,cy+Math.sin(a)*140,6,a,a+3.1);x.stroke()}
-  const grain=(px,py,rot,col,g)=>{x.save();x.translate(px,py);x.rotate(rot);x.fillStyle=col;x.beginPath();x.ellipse(0,0,10*g,5.4*g,0,0,7);x.fill();x.strokeStyle='rgba(0,0,0,.18)';x.lineWidth=1.2;x.stroke();x.restore()};
+  const grain=(px,py,rot,col,g)=>{x.save();x.translate(px,py);x.rotate(rot);x.fillStyle=col;x.beginPath();x.ellipse(0,0,6*g,3.3*g,0,0,7);x.fill();x.strokeStyle='rgba(0,0,0,.18)';x.lineWidth=1.2;x.stroke();x.restore()};
   if(rec.reason===1){x.fillStyle='#141414';x.beginPath();x.arc(cx,cy,112,0,7);x.fill();
     x.strokeStyle='#9aa0a8';x.lineWidth=5;for(let i=0;i<3;i++){x.beginPath();x.moveTo(cx-40+i*40,cy-150);x.bezierCurveTo(cx-60+i*40,cy-190,cx-20+i*40,cy-210,cx-40+i*40,cy-250);x.stroke()}return}
   if(rec.reason===2){for(let i=0;i<70;i++){const a=r()*6.28,d=r()*120;grain(cx+Math.cos(a)*d,cy+Math.sin(a)*d,r()*6,'#e9e2cf',2.2)}return}
