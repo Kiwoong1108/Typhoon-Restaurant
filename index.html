@@ -107,7 +107,7 @@ button:focus-visible{outline:3px solid var(--bolt);outline-offset:2px}
       <div class="slip-head"><b>주방장 긴급 출동</b><span>새우볶음밥 한 그릇 · 새우 많이</span></div>
       <p class="story">오토바이가 물에 잠겼다. 주문은 밀렸다. 주방장은 인라인을 신고 웍을 든 채 빗속으로 나섰다. 가면서 볶는다.</p>
       <ul class="rules">
-        <li><b>이동</b>폰은 좌우로 기울이기, PC는 마우스</li>
+        <li><b>이동</b>폰은 좌우로 밀기, PC는 마우스</li>
         <li><b>탭</b>웍질! 웍에 오래 두면 타요</li>
         <li><b>새우</b>길에 떨어진 새우 주워 넣기</li>
       </ul>
@@ -387,7 +387,6 @@ function update(dt){
   const v=G.stun>0?6:G.slow>0?5.5:12+Math.min(t,10)*.45;
   G.dist=Math.min(ROAD,G.dist+v*dt);
   if(keys.l)G.tx-=7*dt;if(keys.r)G.tx+=7*dt;G.tx=clamp(G.tx,-XW,XW);
-  if(tiltLive())G.tx=clamp(TILT.g/20,-1,1)*XW;
   const old=G.px;G.px+=(G.tx-G.px)*Math.min(1,dt*17);G.steerV=(G.px-old)/dt;
   while(G.t>=G.nextS){G.path.push(enc2(G.px,G.dist,kept(G)));G.nextS+=.25}
   for(const d of w.dans){if(d.got)continue;const z=d.d-G.dist;if(z<.6&&z>-.4&&Math.abs(d.x-G.px)<.85){d.got=true;G.dan++;
@@ -557,7 +556,7 @@ function onOri(e){if(e.gamma==null)return;TILT.g=e.gamma;TILT.last=performance.n
 function enableTilt(){if(TILT.asked)return;TILT.asked=true;
   addEventListener('deviceorientation',onOri);
   try{if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function')DeviceOrientationEvent.requestPermission().catch(()=>{})}catch(e){}}
-$('startBtn').addEventListener('click',()=>{enableTilt();if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}try{AC&&AC.resume()}catch(e){}clearHash();newGame()});
+$('startBtn').addEventListener('click',()=>{if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}try{AC&&AC.resume()}catch(e){}clearHash();newGame()});
 $('againBtn').addEventListener('click',()=>{clearHash();newGame()});
 $('homeBtn').addEventListener('click',()=>{G=null;goTitle()});
 $('copyBtn').addEventListener('click',()=>{
@@ -572,8 +571,10 @@ addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(!h||h===las
 /* drag = steer (relative), quick tap = toss the wok */
 const lx=e=>{const r=cv.getBoundingClientRect();return(e.clientX-r.left)/r.width*W};
 const toX=x=>clamp((x/W*2-1)*XW*1.15,-XW,XW);
-cv.addEventListener('pointerdown',e=>{if(mode!=='play')return;e.preventDefault();ptr={id:e.pointerId,x:lx(e),t:performance.now(),moved:0};if(!tiltLive())G.tx=toX(lx(e));try{cv.setPointerCapture(e.pointerId)}catch(_){}});
-cv.addEventListener('pointermove',e=>{if(mode!=='play')return;if(ptr&&e.pointerId===ptr.id){ptr.moved=Math.max(ptr.moved,Math.abs(lx(e)-ptr.x));if(!tiltLive())G.tx=toX(lx(e))}else if(e.pointerType==='mouse')G.tx=toX(lx(e))});
+// a tap only tosses the wok; it never moves the chef. Touch steers by sliding (relative), mouse by pointer position.
+cv.addEventListener('pointerdown',e=>{if(mode!=='play')return;e.preventDefault();ptr={id:e.pointerId,x:lx(e),start:G.tx,t:performance.now(),moved:0};try{cv.setPointerCapture(e.pointerId)}catch(_){}});
+cv.addEventListener('pointermove',e=>{if(mode!=='play')return;if(e.pointerType==='mouse'){G.tx=toX(lx(e));if(ptr&&e.pointerId===ptr.id)ptr.moved=Math.max(ptr.moved,Math.abs(lx(e)-ptr.x));return}
+  if(ptr&&e.pointerId===ptr.id){const dx=lx(e)-ptr.x;ptr.moved=Math.max(ptr.moved,Math.abs(dx));if(ptr.moved>=14)G.tx=clamp(ptr.start+dx/W*2.4*XW,-XW,XW)}});
 cv.addEventListener('pointerup',e=>{if(ptr&&e.pointerId===ptr.id&&performance.now()-ptr.t<260&&ptr.moved<14)toss();ptr=null});
 ['pointercancel','lostpointercapture'].forEach(n=>cv.addEventListener(n,()=>{ptr=null}));
 addEventListener('blur',()=>{ptr=null;keys.l=keys.r=false});
