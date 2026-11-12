@@ -466,7 +466,7 @@ function end(reason){
   if(mode!=='play')return;
   G.reason=reason;if(reason!==0)G.time=Math.min(G.t,END);
   const q=quality(G);G.good=q.good;G.raw=q.raw;G.burnt=q.burnt;G.kept=q.good+q.raw+q.burnt;G.dan=reason===0?shrimpKept(G):0;
-  G.score=reason===0?Math.round(200+q.good*.9+q.raw*.2+G.dan*40+Math.max(0,END-G.time)*20):0;
+  G.time=Math.round(G.time*10)/10;G.score=scoreOf({reason,good:q.good,raw:q.raw,dan:G.dan,time:G.time});
   G.path.push(enc2(G.px,G.dist,G.kept));mode='over';G.overT=0;
   if(reason===2){G.swell=0;G.floats.push({x:180,y:300,txt:'볶음밥이 식어서 떡졌다',col:'#ff8a7a',life:1.8,size:26});sfx(220,.5,'triangle',.06,.5)}
 }
@@ -476,13 +476,24 @@ const enc2=(px,d,k)=>clamp(Math.round((px+XW)/(2*XW)*35),0,35).toString(36)+clam
 function dec3(s){const a=parseInt(s[0],36)||0,b=parseInt(s[1],36)||0,c=parseInt(s[2],36);return{x:-XW+a/35*2*XW,d:b/35*ROAD,k:isFinite(c)?Math.round(c/35*N):N}}
 function nameHex(s){try{return Array.from(new TextEncoder().encode(s||'')).map(b=>b.toString(16).padStart(2,'0')).join('')}catch(e){return''}}
 function hexName(h){try{if(!h||h.length%2||!/^[0-9a-f]+$/.test(h))return'';const a=new Uint8Array(h.length/2);for(let i=0;i<a.length;i++)a[i]=parseInt(h.substr(i*2,2),16);return new TextDecoder().decode(a).slice(0,8)}catch(e){return''}}
-function encode(r){return['j2',r.seed.toString(36),r.score.toString(36),r.good.toString(36),r.raw.toString(36),r.burnt.toString(36),r.dan.toString(36),Math.round(r.time*10).toString(36),r.reason,r.path||'0',nameHex(r.name)].join('-')}
+// share code: everything packed into one base-36 number + optional name → "#r<packed>[-<name>]"
+// bits (low→high): seed 31 · good 10 · raw 10 · burnt 10 · shrimp 5 · time(0.1s) 8 · reason 2  ≈ 15 chars
+const scoreOf=r=>r.reason===0?Math.round(200+r.good*.9+r.raw*.2+r.dan*40+Math.max(0,END-r.time)*20):0;
+function nameEnc(s){return Array.from(s||'').slice(0,8).map(ch=>Math.min(ch.codePointAt(0),1679615).toString(36).padStart(4,'0')).join('')}
+function nameDec(t){if(!t||t.length%4||!/^[0-9a-z]+$/.test(t))return'';let o='';for(let i=0;i<t.length&&i<32;i+=4){const c=parseInt(t.substr(i,4),36);if(c>31)o+=String.fromCodePoint(c)}return o}
+function encode(r){
+  const B=BigInt;let v=B(clamp(r.reason,0,3));
+  for(const [x,bits] of [[Math.round(r.time*10),8],[r.dan,5],[r.burnt,10],[r.raw,10],[r.good,10],[r.seed,31]])v=(v<<B(bits))|B(clamp(Math.floor(x)||0,0,2**bits-1));
+  const nm=nameEnc(r.name);return'r'+v.toString(36)+(nm?'-'+nm:'');
+}
 function decode(h){
-  const p=(h||'').replace(/^#/,'').split('-');if(p.length!==11||p[0]!=='j2')return null;
-  const n=i=>parseInt(p[i],36);const seed=n(1),score=n(2);if(!isFinite(seed)||!isFinite(score))return null;
-  const good=clamp(n(3)||0,0,N),raw=clamp(n(4)||0,0,N-good),burnt=clamp(n(5)||0,0,N-good-raw);
-  return{seed,score:Math.min(score,99999),good,raw,burnt,kept:good+raw+burnt,dan:clamp(n(6)||0,0,99),time:clamp((n(7)||0)/10,0,END),
-    reason:clamp(+p[8]||0,0,3),path:p[9].length%3?'':p[9].slice(0,330),name:hexName(p[10])};
+  const m=/^#?r([0-9a-z]{1,20})(?:-([0-9a-z]*))?$/.exec(h||'');if(!m)return null;
+  let v=0n;for(const ch of m[1])v=v*36n+BigInt(parseInt(ch,36));
+  const take=bits=>{const x=Number(v&((1n<<BigInt(bits))-1n));v>>=BigInt(bits);return x};
+  const seed=take(31),good=take(10),raw=take(10),burnt=take(10),dan=take(5),time=take(8)/10,reason=take(2);
+  if(good+raw+burnt>N)return null;
+  const r={seed,good,raw,burnt,kept:good+raw+burnt,dan,time:Math.min(time,END),reason,path:'',name:nameDec(m[2])};
+  r.score=scoreOf(r);return r;
 }
 function recOf(g){return{seed:g.seed,score:g.score,good:g.good,raw:g.raw,burnt:g.burnt,kept:g.kept,dan:g.dan,time:g.time,reason:g.reason,path:g.path.join(''),name:g.name}}
 function grade(r){
