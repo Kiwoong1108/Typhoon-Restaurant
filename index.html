@@ -412,9 +412,9 @@ function update(dt){
 }
 function stepNoodles(dt){
   for(const n of G.nd){
-    if(n.st===1){n.vy+=1000*dt;n.x+=n.vx*dt-G.steerV*11*dt;n.y+=n.vy*dt;n.rot+=n.vr*dt;
+    if(n.st===1){n.vy+=1000*dt;n.x+=n.vx*dt-G.steerV*50*dt; // airborne rice keeps its place in the world: move under it and it lags behindn.y+=n.vy*dt;n.rot+=n.vr*dt;
       if(n.vy>0&&n.y>=WY+n.oy){if(Math.abs(n.x-WX)<88){n.st=0;if(n.kind!==2||n.tossedOnce)n.tc=(n.tc||0)+1;n.tossedOnce=true;n.ox=clamp(n.x-WX,-62,62);n.oy=(Math.random()*2-1)*12}
-        else{n.st=2;n.vx=(n.x<WX?-1:1)*(120+Math.random()*120);n.vy=-120;if(mode==='play'){G.floats.push({x:clamp(n.x,40,320),y:WY-60,txt:n.kind===2?'새우 이탈!':'밥알 이탈!',col:'#f4efe2',life:.7,size:16})}}}}
+        else{n.st=2;n.vx=(n.x<WX?-1:1)*(10+Math.random()*40);n.vy=40+Math.random()*80;if(mode==='play'){G.floats.push({x:clamp(n.x,40,320),y:WY-60,txt:n.kind===2?'새우 이탈!':'밥알 이탈!',col:'#f4efe2',life:.7,size:16})}}}}
     else if(n.st===2){n.vy+=1300*dt;n.x+=n.vx*dt;n.y+=n.vy*dt;n.rot+=n.vr*dt;if(n.y>H+80)n.st=4}
     else if(n.st===3){if(n.k<1)n.k+=dt/.28;else{n.life-=dt;n.slide+=26*dt;if(n.life<=0)n.st=4}}
   }
