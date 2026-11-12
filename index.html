@@ -97,7 +97,7 @@ button:focus-visible{outline:3px solid var(--bolt);outline-offset:2px}
       <div class="slip-head"><b>주방장 긴급 출동</b><span>새우볶음밥 한 그릇 · 새우 많이</span></div>
       <p class="story">오토바이가 물에 잠겼다. 주문은 밀렸다. 주방장은 인라인을 신고 웍을 든 채 빗속으로 나섰다. 가면서 볶는다.</p>
       <ul class="rules">
-        <li><b>위치 따라가기</b>마우스·손가락 쪽으로 주방장이 이동</li>
+        <li><b>이동</b>폰은 좌우로 기울이기, PC는 마우스</li>
         <li><b>탭</b>웍질! 웍에 오래 두면 타요</li>
         <li><b>새우</b>길에 떨어진 새우 주워 넣기</li>
       </ul>
@@ -129,7 +129,7 @@ button:focus-visible{outline:3px solid var(--bolt);outline-offset:2px}
 <script>
 (()=>{
 'use strict';
-const W=360,H=640,END=25,ROAD=290,N=1000,HOR=212,F=300,CH=1.5,ZN=1.1,RW=4.2,SW=7.5,XW=3.1,WX=180,WY=566;
+const W=360,H=640,END=25,ROAD=290,N=1000,HOR=212,F=300,CH=1.5,ZN=1.1,RW=6,SW=9.5,XW=4.8,WX=180,WY=566;
 const FD='"Do Hyeon","Noto Sans KR",sans-serif',FB='"Noto Sans KR",sans-serif';
 const $=id=>document.getElementById(id);
 const stage=$('stage'),cv=$('cv'),ctx=cv.getContext('2d');
@@ -172,9 +172,9 @@ function buildWorld(seed){
   const placed=[];
   const free=(d,x,rad)=>placed.every(p=>Math.abs(p.d-d)>p.rad+rad+1.2||Math.abs(p.x-x)>p.rad+rad+.4);
   const put=(d,rad,lim)=>{for(let i=0;i<16;i++){const x=(r()*2-1)*lim;if(free(d,x,rad)){placed.push({d,x,rad});return x}}return null};
-  const drops=[];for(let d=26;d<ROAD-14;d+=8.5+r()*6.5){const k=Math.floor(r()*5),spin=(r()-.5)*7,x=put(d,.8,2.9);if(x!==null)drops.push({d,x,k,spin,hit:false})}
-  const puddles=[];for(let d=40;d<ROAD-20;d+=26+r()*30){const w=1.3+r()*.8,x=put(d,w/2,2.5);if(x!==null)puddles.push({d,x,w,hit:false})}
-  const dans=[];for(let i=0;i<18;i++){const d=15+r()*(ROAD-35),x=put(d,.4,2.8);if(x!==null)dans.push({d,x,got:false})}
+  const drops=[];for(let d=26;d<ROAD-14;d+=8.5+r()*6.5){const k=Math.floor(r()*5),spin=(r()-.5)*7,x=put(d,.8,4.6);if(x!==null)drops.push({d,x,k,spin,hit:false})}
+  const puddles=[];for(let d=40;d<ROAD-20;d+=26+r()*30){const w=1.3+r()*.8,x=put(d,w/2,4.2);if(x!==null)puddles.push({d,x,w,hit:false})}
+  const dans=[];for(let i=0;i<18;i++){const d=15+r()*(ROAD-35),x=put(d,.4,4.5);if(x!==null)dans.push({d,x,got:false})}
   return{dong,room,drops,puddles,dans,bolts:[]};
 }
 const dropH=z=>z>14?(z-14)*.9:0;
@@ -336,7 +336,7 @@ const TITLE_NOODLES=makeNoodles(N,9);
 function newGame(){
   const seed=(Math.random()*2147483647)>>>0;
   G={seed,world:buildWorld(seed),t:0,dist:0,px:0,tx:0,stun:0,slow:0,invul:0,cook:0,dan:0,hits:0,
-     nd:makeNoodles(N,seed^77),tossCD:0,toss:0,jig:0,flame:0,steerV:0,splats:[],hitstop:0,zapT:0,swell:-1,fallT:-1,tilt:0,sl:0,slv:0,
+     nd:makeNoodles(N,seed^77),tossCD:0,toss:0,jig:0,flame:0,steerV:0,splats:[],hitstop:0,zapT:0,swell:-1,fallT:-1,tilt:0,sl:0,slv:0,roll:0,
      path:[],nextS:0,parts:[],floats:[],flash:0,shake:0,reason:-1,score:0,time:0,kept:N,overT:0,shown:false,zapped:false,tossed:0,
      name:$('nameIn').value.trim().slice(0,8)};
   mode='play';ptr=null;
@@ -377,7 +377,8 @@ function update(dt){
   const v=G.stun>0?6:G.slow>0?5.5:12+Math.min(t,10)*.45;
   G.dist=Math.min(ROAD,G.dist+v*dt);
   if(keys.l)G.tx-=7*dt;if(keys.r)G.tx+=7*dt;G.tx=clamp(G.tx,-XW,XW);
-  const old=G.px;G.px+=(G.tx-G.px)*Math.min(1,dt*9);G.steerV=(G.px-old)/dt;
+  if(tiltLive())G.tx=clamp(TILT.g/20,-1,1)*XW;
+  const old=G.px;G.px+=(G.tx-G.px)*Math.min(1,dt*17);G.steerV=(G.px-old)/dt;
   while(G.t>=G.nextS){G.path.push(enc2(G.px,G.dist,kept(G)));G.nextS+=.25}
   for(const d of w.dans){if(d.got)continue;const z=d.d-G.dist;if(z<.6&&z>-.4&&Math.abs(d.x-G.px)<.85){d.got=true;G.dan++;
     const sb=bit(2,Math.random);Object.assign(sb,{st:1,x:WX+(Math.random()-.5)*80,y:WY-300,vx:(Math.random()-.5)*40,vy:120,vr:(Math.random()-.5)*8,tc:TOSS_NEED});G.nd.push(sb);
@@ -397,7 +398,7 @@ function update(dt){
 }
 function stepNoodles(dt){
   for(const n of G.nd){
-    if(n.st===1){n.vy+=1000*dt;n.x+=n.vx*dt-G.steerV*20*dt;n.y+=n.vy*dt;n.rot+=n.vr*dt;
+    if(n.st===1){n.vy+=1000*dt;n.x+=n.vx*dt-G.steerV*11*dt;n.y+=n.vy*dt;n.rot+=n.vr*dt;
       if(n.vy>0&&n.y>=WY+n.oy){if(Math.abs(n.x-WX)<88){n.st=0;if(n.kind!==2||n.tossedOnce)n.tc=(n.tc||0)+1;n.tossedOnce=true;n.ox=clamp(n.x-WX,-62,62);n.oy=(Math.random()*2-1)*12}
         else{n.st=2;n.vx=(n.x<WX?-1:1)*(120+Math.random()*120);n.vy=-120;if(mode==='play'){G.floats.push({x:clamp(n.x,40,320),y:WY-60,txt:n.kind===2?'새우 이탈!':'밥알 이탈!',col:'#f4efe2',life:.7,size:16})}}}}
     else if(n.st===2){n.vy+=1300*dt;n.x+=n.vx*dt;n.y+=n.vy*dt;n.rot+=n.vr*dt;if(n.y>H+80)n.st=4}
@@ -539,7 +540,14 @@ function enterShared(rec){
 }
 let toastT=0;function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,1800)}
 
-$('startBtn').addEventListener('click',()=>{if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}try{AC&&AC.resume()}catch(e){}clearHash();newGame()});
+/* phone tilt steering: left/right tilt (gamma) drives the chef; iOS needs permission from the start tap */
+const TILT={g:0,last:-1e9,asked:false};
+const tiltLive=()=>performance.now()-TILT.last<600;
+function onOri(e){if(e.gamma==null)return;TILT.g=e.gamma;TILT.last=performance.now()}
+function enableTilt(){if(TILT.asked)return;TILT.asked=true;
+  addEventListener('deviceorientation',onOri);
+  try{if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function')DeviceOrientationEvent.requestPermission().catch(()=>{})}catch(e){}}
+$('startBtn').addEventListener('click',()=>{enableTilt();if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}try{AC&&AC.resume()}catch(e){}clearHash();newGame()});
 $('againBtn').addEventListener('click',()=>{clearHash();newGame()});
 $('homeBtn').addEventListener('click',()=>{G=null;goTitle()});
 $('copyBtn').addEventListener('click',()=>{
@@ -554,8 +562,8 @@ addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(!h||h===las
 /* drag = steer (relative), quick tap = toss the wok */
 const lx=e=>{const r=cv.getBoundingClientRect();return(e.clientX-r.left)/r.width*W};
 const toX=x=>clamp((x/W*2-1)*XW*1.15,-XW,XW);
-cv.addEventListener('pointerdown',e=>{if(mode!=='play')return;e.preventDefault();ptr={id:e.pointerId,x:lx(e),t:performance.now(),moved:0};G.tx=toX(lx(e));try{cv.setPointerCapture(e.pointerId)}catch(_){}});
-cv.addEventListener('pointermove',e=>{if(mode!=='play')return;if(ptr&&e.pointerId===ptr.id){ptr.moved=Math.max(ptr.moved,Math.abs(lx(e)-ptr.x));G.tx=toX(lx(e))}else if(e.pointerType==='mouse')G.tx=toX(lx(e))});
+cv.addEventListener('pointerdown',e=>{if(mode!=='play')return;e.preventDefault();ptr={id:e.pointerId,x:lx(e),t:performance.now(),moved:0};if(!tiltLive())G.tx=toX(lx(e));try{cv.setPointerCapture(e.pointerId)}catch(_){}});
+cv.addEventListener('pointermove',e=>{if(mode!=='play')return;if(ptr&&e.pointerId===ptr.id){ptr.moved=Math.max(ptr.moved,Math.abs(lx(e)-ptr.x));if(!tiltLive())G.tx=toX(lx(e))}else if(e.pointerType==='mouse')G.tx=toX(lx(e))});
 cv.addEventListener('pointerup',e=>{if(ptr&&e.pointerId===ptr.id&&performance.now()-ptr.t<260&&ptr.moved<14)toss();ptr=null});
 ['pointercancel','lostpointercapture'].forEach(n=>cv.addEventListener(n,()=>{ptr=null}));
 addEventListener('blur',()=>{ptr=null;keys.l=keys.r=false});
@@ -628,9 +636,14 @@ function frame(now){
     CAMX=G.px+stride*.12;
     if(G.fallT>=0)G.fallT+=fdt;
     const pitch=G.fallT>=0?1-Math.pow(1-Math.min(1,G.fallT/.55),3):0;
-    if(pitch>0){drawStormSky(G.t);ctx.save();ctx.translate(180,320);ctx.rotate(pitch*.12);ctx.translate(-180,-320+pitch*560)}
+    // bank the view into the turn
+    G.roll+=((mode==='play'?clamp(-G.steerV*.016,-.15,.15):0)-G.roll)*Math.min(1,rdt*12);
+    if(pitch>0)drawStormSky(G.t);
+    {const zs=1+Math.abs(G.roll)*1.5;ctx.save();ctx.translate(180,HOR+150);ctx.rotate(G.roll);ctx.scale(zs,zs);ctx.translate(-180,-(HOR+150))}
+    if(pitch>0){ctx.save();ctx.translate(180,320);ctx.rotate(pitch*.12);ctx.translate(-180,-320+pitch*560)}
     drawWorld(G.dist,G.t,G.world,reduce?Math.min(G.flash,.25):G.flash);
-    if(pitch>0){ctx.restore();drawRain()}
+    if(pitch>0)ctx.restore();
+    ctx.restore();if(pitch>0)drawRain();
     drawLensRain();
     if(pitch>0){ctx.save();ctx.translate(0,pitch*320);ctx.rotate(-pitch*.25)}
     const xray=G.zapped&&G.zapT<.9&&Math.floor(G.zapT*16)%2===0;
