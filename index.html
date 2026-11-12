@@ -174,7 +174,7 @@ const grainGood='#e2a648',grainRaw='#f4efe2';
 function noodleColH(h){if(h<RAW_T)return lerpCol('#f0d27c','#c99a52',h/RAW_T);if(h<12)return lerpCol('#c99a52','#6b3f1c',(h-RAW_T)/(12-RAW_T));if(h<BURN_T)return lerpCol('#6b3f1c','#2a1a0e',(h-12)/(BURN_T-12));return'#141414'}
 
 /* ---------- world (road meters; x = metres from centre line) ---------- */
-const DROP=['간판','화분','고무대야','슬리퍼','기왓장'];
+const DROP=['간판','화분','고무대야','슬리퍼','뒤집힌 우산'];
 function buildWorld(seed){
   const r=rng(seed);
   const dong=101+Math.floor(r()*9),room=(15+Math.floor(r()*9))*100+1+Math.floor(r()*6);
@@ -208,7 +208,12 @@ function drawDrop(k,x,y,rot,s){
     ctx.fillStyle='#3f9a4a';for(let i=0;i<5;i++){ctx.beginPath();ctx.ellipse(-10+i*5,-10,4,10,(i-2)*.35,0,7);ctx.fill()}}
   else if(k===2){ctx.fillStyle='#d8352a';ctx.beginPath();ctx.moveTo(-24,-12);ctx.lineTo(24,-12);ctx.lineTo(18,12);ctx.lineTo(-18,12);ctx.closePath();ctx.fill();ctx.fillStyle='#a8241c';ctx.fillRect(-25,-14,50,5)}
   else if(k===3){ctx.fillStyle='#2f6fd6';ctx.beginPath();ctx.ellipse(0,0,20,9,0,0,7);ctx.fill();ctx.fillStyle='#e9eef7';ctx.fillRect(-4,-9,8,18)}
-  else{ctx.fillStyle='#3d4a5c';ctx.beginPath();ctx.moveTo(-20,-12);ctx.quadraticCurveTo(0,-20,20,-12);ctx.lineTo(18,12);ctx.quadraticCurveTo(0,4,-18,12);ctx.closePath();ctx.fill()}
+  else{ // wind-flipped umbrella: bright canopy turned inside out, handle sticking up
+    ctx.fillStyle='#ffd23f';ctx.beginPath();ctx.moveTo(-28,-14);ctx.quadraticCurveTo(-20,14,0,14);ctx.quadraticCurveTo(20,14,28,-14);
+    for(let i=0;i<4;i++)ctx.quadraticCurveTo(21-i*14,-8,14-i*14,-14);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#f6f1e7';ctx.lineWidth=2;ctx.beginPath();for(const x of[-14,0,14]){ctx.moveTo(x,-13);ctx.lineTo(x*.4,12)}ctx.stroke();
+    ctx.strokeStyle='#b88a00';ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(-28,-14);ctx.quadraticCurveTo(-20,14,0,14);ctx.quadraticCurveTo(20,14,28,-14);ctx.stroke();
+    ctx.strokeStyle='#1b1712';ctx.lineWidth=3;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(0,14);ctx.lineTo(0,-24);ctx.arc(-5,-24,5,0,Math.PI,true);ctx.stroke()}
   ctx.restore();
 }
 function drawDan(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s*1.1,s*1.1);
