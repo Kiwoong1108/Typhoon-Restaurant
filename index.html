@@ -454,7 +454,8 @@ function arrive(){G.time=G.t;sfx(660,.12,'triangle',.07);setTimeout(()=>sfx(523,
   const pre=Math.round(200+q.good*.9+q.raw*.2+sh*40+Math.max(0,END-G.t)*20);
   G.floats.push({x:180,y:290,txt:'딩동~ 태풍반점입니다!',col:'#ffd23f',life:1.9,size:26});
   let say;
-  if(pre<650||sh===0)say='...새우볶음밥 시켰는데요?';
+  if(k<150)say=sh>0?'...새우구이 시킨 적 없는데요?':'빈 웍만 들고 오셨어요?';
+  else if(pre<650||sh===0)say='...새우볶음밥 시켰는데요?';
   else if(q.burnt>q.good&&q.burnt>=q.raw)say='...이거 누룽지예요?';
   else if(q.raw>q.good)say='밥이 하얀데요? 볶은 거 맞아요?';
   else if(k>=800)say='와 노릇노릇하네요!';
@@ -498,6 +499,7 @@ function decode(h){
 function recOf(g){return{seed:g.seed,score:g.score,good:g.good,raw:g.raw,burnt:g.burnt,kept:g.kept,dan:g.dan,time:g.time,reason:g.reason,path:g.path.join(''),name:g.name}}
 function grade(r){
   if(r.reason===1)return'감전된 주방장';if(r.reason===2)return'떡진 볶음밥';if(r.reason===3)return'하늘 본 주방장';
+  if(r.kept<150)return r.dan>0?'새우구이 배달부':'빈 웍 배달부';
   if(r.dan===0||r.score<650)return'새우 어디 갔어요?';
   if(r.burnt>r.good&&r.burnt>=r.raw)return'누룽지 장인';
   if(r.raw>r.good)return'그냥 흰밥 배달부';
