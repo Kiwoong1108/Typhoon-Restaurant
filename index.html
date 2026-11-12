@@ -211,7 +211,7 @@ function drawDrop(k,x,y,rot,s){
   else{ctx.fillStyle='#3d4a5c';ctx.beginPath();ctx.moveTo(-20,-12);ctx.quadraticCurveTo(0,-20,20,-12);ctx.lineTo(18,12);ctx.quadraticCurveTo(0,4,-18,12);ctx.closePath();ctx.fill()}
   ctx.restore();
 }
-function drawDan(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s*1.5,s*1.5);
+function drawDan(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s*1.1,s*1.1);
   ctx.fillStyle='rgba(255,150,100,.25)';ctx.beginPath();ctx.arc(0,0,16,0,7);ctx.fill();drawShrimp(ctx,'#ff8a5c');ctx.restore()}
 
 function drawWorld(dist,t,world,flash){
@@ -279,7 +279,7 @@ function drawShrimp(c,col){c.strokeStyle=col;c.lineWidth=7;c.lineCap='round';c.b
 function drawBit(kind,x,y,rot,sc,col,sw){ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.scale(sc,sc);
   if(kind===0){const g=1+(sw||0);ctx.fillStyle=col;ctx.beginPath();ctx.ellipse(0,0,3.3*g,1.8*g,0,0,7);ctx.fill()}
   else if(kind===1){ctx.strokeStyle=col;ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(0,0,2.7,0,7);ctx.stroke()}
-  else drawShrimp(ctx,col);
+  else{ctx.scale(.72,.72);drawShrimp(ctx,col)}
   ctx.restore()}
 function drawNoodle(x,y,rot,len,sc,col,lw){ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.scale(sc,sc);ctx.strokeStyle=col;ctx.lineWidth=lw||3.2;ctx.lineCap='round';
   ctx.beginPath();ctx.moveTo(-len/2,0);ctx.bezierCurveTo(-len/6,-7,len/6,7,len/2,0);ctx.stroke();ctx.restore()}
@@ -302,7 +302,7 @@ function drawKitchen(st){
   // slosh: every grain slides with the wok's tilt (spring-damped, so it overshoots and rocks back); lighter grains travel further
   const sl=st.sl||0,slv=st.slv||0;
   for(const n of st.noodles){if(n.st!==0)continue;const j=Math.sin(st.t*40+n.ph)*st.jig*5,mob=.55+((n.ph*7)%1)*.75;
-    const gx=clamp(n.ox+sl*mob,-80,80),gy=n.oy-Math.abs(gx)/80*4+Math.sin(st.t*9+n.ph*3)*Math.min(3,Math.abs(slv)*.025);
+    const gx=clamp(n.ox+sl*mob,-90,90),gy=n.oy-Math.abs(gx)/80*4+Math.sin(st.t*9+n.ph*3)*Math.min(3,Math.abs(slv)*.025);
     drawBit(n.kind,cx+gx,cy+gy+j,n.rot+sl*.006*mob,1,st.charred?'#1a1a1a':noodleColN(n),st.swell>0?st.swell*.9:0)}
   ctx.restore();
   // arms in chef sleeves
@@ -505,7 +505,7 @@ function drawBowl(x,cx,cy,rec){
   for(const col of cols){const a=r()*6.28,d=Math.sqrt(r())*112;grain(cx+Math.cos(a)*d,cy+Math.sin(a)*d*.95,r()*6.28,col,1)}
   if(!cols.length){x.fillStyle='#8a8070';x.font='700 26px '+FB;x.textAlign='center';x.fillText('밥알 0개',cx,cy+9)}
   if(cols.length){x.strokeStyle='#6cc85f';x.lineWidth=4;for(let i=0;i<16;i++){const a=r()*6.28,d=Math.sqrt(r())*100;x.beginPath();x.arc(cx+Math.cos(a)*d,cy+Math.sin(a)*d,7,0,7);x.stroke()}}
-  for(let i=0;i<rec.dan;i++){const a=i/Math.max(1,rec.dan)*6.28+r(),d=rec.dan>1?40+r()*40:0;x.save();x.translate(cx+Math.cos(a)*d,cy+Math.sin(a)*d);x.rotate(r()*6.28);x.scale(2.6,2.6);drawShrimp(x,'#ff8a5c');x.restore()}
+  for(let i=0;i<rec.dan;i++){const a=i/Math.max(1,rec.dan)*6.28+r(),d=rec.dan>1?40+r()*40:0;x.save();x.translate(cx+Math.cos(a)*d,cy+Math.sin(a)*d);x.rotate(r()*6.28);x.scale(2.1,2.1);drawShrimp(x,'#ff8a5c');x.restore()}
 }
 function makeCard(rec){
   const w=buildWorld(rec.seed);
@@ -635,8 +635,11 @@ function frame(now){
     gdt*=sm;const fdt=rdt*sm;
     if(mode==='play')update(gdt);
     stepNoodles(gdt);
-    {const tgt=mode==='play'?clamp(G.steerV/4,-1,1):0;G.tilt+=(tgt*.16-G.tilt)*Math.min(1,fdt*8);
-     G.slv+=(tgt*46-G.sl)*80*fdt-G.slv*4*fdt;G.sl+=G.slv*fdt;}
+    {const tgt=mode==='play'?clamp(G.steerV/9,-1,1):0;G.tilt+=(tgt*.16-G.tilt)*Math.min(1,fdt*8);
+     G.slv+=(tgt*46-G.sl)*80*fdt-G.slv*4*fdt;G.sl+=G.slv*fdt;
+     // tipped too far: grains that slide past the rim fall out of the wok
+     if(mode==='play')for(const n of G.nd){if(n.st!==0)continue;const mob=.55+((n.ph*7)%1)*.75,gx=n.ox+G.sl*mob;
+       if(Math.abs(gx)>90){const sg=Math.sign(gx);Object.assign(n,{st:2,x:WX+sg*92,y:WY+n.oy,vx:sg*(90+Math.random()*140)+G.slv*.4,vy:-(80+Math.random()*160),vr:(Math.random()-.5)*14})}}}
     if(G.zapped)G.zapT+=rdt;if(G.swell>=0)G.swell=Math.min(1,G.swell+rdt*.9);
     G.toss=Math.max(0,G.toss-rdt*5);G.jig=Math.max(0,G.jig-rdt*2.5);G.flame=Math.max(0,G.flame-rdt*3);
     stepSplats(G.splats,fdt);stepFx(G.parts,fdt);stepFx(G.floats,fdt);G.flash=Math.max(0,G.flash-rdt*2.2);
